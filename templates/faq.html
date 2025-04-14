@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - SpamGuard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/background.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1><i class="fas fa-shield-alt"></i> SpamGuard</h1>
+            <nav>
+                <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
+                <a href="{{ url_for('about') }}"><i class="fas fa-info-circle"></i> About</a>
+                <a href="{{ url_for('contact') }}"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout ({{ username }})</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-content">
+            <div class="faq-item">
+                <h3>How accurate is SpamGuard?</h3>
+                <p>Our system currently achieves 98% accuracy in spam detection based on our testing datasets.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Is my email content stored?</h3>
+                <p>No, we analyze emails in real-time and do not permanently store the content you submit.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Can I use SpamGuard for bulk email analysis?</h3>
+                <p>Currently, we only support single email analysis through the web interface.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h3>How can I report a classification error?</h3>
+                <p>Please use our Contact page to report any issues with our spam detection.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About SpamGuard</h3>
+                <p>Our advanced AI system helps protect you from unwanted spam emails with 98% accuracy.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
+                    <li><a href="{{ url_for('terms') }}">Terms of Service</a></li>
+                    <li><a href="{{ url_for('faq') }}">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Connect With Us</h3>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 SpamGuard. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

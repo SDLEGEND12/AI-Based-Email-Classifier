@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/background.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1><i class="fas fa-shield-alt"></i> SpamGuard Admin</h1>
+            <nav>
+                <a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="{{ url_for('admin_messages') }}"><i class="fas fa-envelope"></i> Messages</a>
+                <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout ({{ username }})</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h2>Contact Messages</h2>
+        <div class="messages-list">
+            {% for message in messages %}
+            <div class="message-card {% if not message.is_read %}unread{% endif %}">
+                <h3>{{ message.name }} &lt;{{ message.email }}&gt;</h3>
+                <small>{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                <p>{{ message.message }}</p>
+                <form action="/mark-read/{{ message.id }}" method="POST" style="display: inline;">
+                    <button type="submit" class="btn-mark-read">
+                        <i class="fas fa-check"></i> Mark as Read
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

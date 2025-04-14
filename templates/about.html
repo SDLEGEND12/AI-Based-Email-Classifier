@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - SpamGuard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/background.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1><i class="fas fa-shield-alt"></i> SpamGuard</h1>
+            <nav>
+                <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
+                <a href="{{ url_for('about') }}"><i class="fas fa-info-circle"></i> About</a>
+                <a href="{{ url_for('contact') }}"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout ({{ username }})</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h2>About SpamGuard</h2>
+        <div class="about-content">
+            <p>SpamGuard is an advanced email classification system that helps identify spam emails with high accuracy.</p>
+            <p>Our system uses machine learning algorithms trained on thousands of emails to distinguish between legitimate messages and spam.</p>
+            <h3>Key Features:</h3>
+            <ul>
+                <li>98% accuracy in spam detection</li>
+                <li>Real-time classification</li>
+                <li>User-friendly interface</li>
+                <li>Secure authentication system</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer>
+        <!-- Same footer as index.html -->
+    </footer>
+</body>
+</html>
