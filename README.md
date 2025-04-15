@@ -44,19 +44,34 @@ Access the app at http://localhost:5000
 
 # 📸 Screenshots
 
+### Login Page  
+![Login Page](/login.png)  
+
+### Register Page
+![Register Page](/register.png)
+
+### Forgot Password
+![Forgot Password Page](/forgot_password.png)
+
+### Email Classification Demo  
+![Prediction Demo](/Spam_Classifier.png)  
+
+### Admin Dashboard  
+![Admin Panel](/AdminDashboard.png)
+
+### About
+![About](/About.png)
+
+### Contact
+![Contact Page](/Contact.png)
+
+### Contact Messages
+![Admin Messages](/Contact_Messages.png)
+
 Tokenization: Text is converted to sequences using a trained tokenizer
 
 Prediction: A deep learning model evaluates the email and returns a spam probability score
 
 Result: Classified as "Spam" (if probability > 70%) or "Not Spam"
 
-
-### Login Page  
-![Login Page](/login.png)  
-
-### Email Classification Demo  
-![Prediction Demo](/Spam_Classifier.png)  
-
-### Admin Dashboard  
-![Admin Panel](/admin.png)
-
+# This description highlights the AI/ML aspect, security features, and ease of setup, making it attractive to both technical and non-technical users. You can adjust the tone or add more details as needed. 🚀
