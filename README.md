@@ -52,11 +52,11 @@ Result: Classified as "Spam" (if probability > 70%) or "Not Spam"
 
 
 ### Login Page  
-![Login Page](/screenshots/login.png)  
+![Login Page](/login.png)  
 
 ### Email Classification Demo  
-![Prediction Demo](/screenshots/prediction.png)  
+![Prediction Demo](/Spam_Classifier.png)  
 
 ### Admin Dashboard  
-![Admin Panel](/screenshots/admin.png)
+![Admin Panel](/admin.png)
 
