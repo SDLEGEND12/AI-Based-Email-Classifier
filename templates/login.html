@@ -8,6 +8,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        header, footer {
+            flex-shrink: 0;
+        }
+
+        main {
+            flex: 1;
+        }
+
         .auth-container {
             max-width: 400px;
             margin: 50px auto;
@@ -16,27 +32,30 @@
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
+
         .auth-container h2 {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .form-group {
             margin-bottom: 15px;
             justify-content: center;
         }
+
         .form-group label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
+
         .form-group input {
             width: 95%;
-            margin-left: 0px;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
-            
         }
+
         .auth-btn {
             width: 100%;
             padding: 10px;
@@ -47,30 +66,46 @@
             cursor: pointer;
             font-size: 16px;
         }
+
         .auth-btn:hover {
             background-color: #45a049;
         }
+
         .auth-links {
             margin-top: 15px;
             text-align: center;
         }
+
         .flash-message {
             padding: 10px;
             margin-bottom: 15px;
             border-radius: 5px;
             text-align: center;
         }
+
         .flash-success {
             background-color: #dff0d8;
             color: #3c763d;
         }
+
         .flash-error {
             background-color: #f2dede;
             color: #a94442;
         }
+
         .flash-info {
             background-color: #d9edf7;
             color: #31708f;
+        }
+
+        .header-content nav a {
+            margin: 0 10px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .header-content nav a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -80,40 +115,42 @@
             <h1><i class="fas fa-shield-alt"></i> SpamGuard</h1>
             <nav>
                 <a href="#"><i class="fas fa-home"></i> Home</a>
-                <a href="#"><i class="fas fa-info-circle"></i> About</a>
+                <a href="{{ url_for('about') }}"><i class="fas fa-info-circle"></i> About</a>
                 <a href="#"><i class="fas fa-envelope"></i> Contact</a>
             </nav>
         </div>
     </header>
 
-    <div class="auth-container">
-        <h2>Login</h2>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <form method="POST" action="{{ url_for('login') }}">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
+    <main>
+        <div class="auth-container">
+            <h2>Login</h2>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="auth-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
+            </form>
+            
+            <div class="auth-links">
+                <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+                <p><a href="{{ url_for('forgot_password') }}"><i class="fas fa-key"></i> Forgot Password?</a></p>
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit" class="auth-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
-        </form>
-        
-        <div class="auth-links">
-            <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
-            <p><a href="{{ url_for('forgot_password') }}"><i class="fas fa-key"></i> Forgot Password?</a></p>
         </div>
-    </div>
+    </main>
 
     <footer>
         <div class="footer-content">
