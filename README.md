@@ -27,7 +27,7 @@ Preprocessing: Emails are cleaned (lowercase, stopwords removed, hyperlinks stri
 Clone the repo:
 
 ```bash
-git clone https://github.com/yourusername/SpamGuard.git
+git clone https://github.com/SDLEGEND12/AI-Based-Email-Classifier.git
 cd SpamGuard
 ```
 Install dependencies:
