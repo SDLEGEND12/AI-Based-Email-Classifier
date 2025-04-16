@@ -65,8 +65,6 @@ Access the app at http://localhost:5000
 ### Contact
 ![Contact Page](/Contact.png)
 
-### Contact Messages
-![Admin Messages](/Contact_Messages.png)
 
 Tokenization: Text is converted to sequences using a trained tokenizer
 
