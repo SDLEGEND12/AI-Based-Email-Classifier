@@ -540,5 +540,7 @@ def predict():
     result = "Spam" if spam_probability > 0.7 else "Not Spam"
     return jsonify({"prediction": result, "probability": spam_probability})
 
+handler = app
+
 if __name__ == "__main__":
     app.run(debug=True)
