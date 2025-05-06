@@ -18,7 +18,7 @@
                 <a href="{{ url_for('contact') }}"><i class="fas fa-envelope"></i> Contact</a>
                 
                 {% if session.get('username') %}
-                    {% set user = User.query.filter_by(username=session['username']).first() %}
+                {# Use the 'user' variable passed from the route #}
                     <div class="dropdown">
                         <button class="dropbtn">
                             <i class="fas fa-user"></i> {{ username }} <i class="fas fa-caret-down"></i>

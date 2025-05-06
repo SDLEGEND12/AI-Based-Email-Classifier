@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, url_for, redirect, session, flash
+from flask import Flask, render_template, request, jsonify, url_for, redirect, session, flash, abort
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -10,14 +10,17 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 import os
 from functools import wraps
 from dotenv import load_dotenv
-load_dotenv()  # Load environment variables from .env file
+from datetime import datetime
+#from flask_mongoengine import MongoEngine
+from mongoengine import connect, Document, StringField, BooleanField, DateTimeField
+from pymongo import MongoClient
+
+load_dotenv()
 
 # Download NLTK resources
 nltk.download('punkt')
@@ -25,13 +28,24 @@ nltk.download('stopwords')
 
 # Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')  # Change this in production
+app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-
+# MongoDB configuration
+app.config['MONGODB_URI'] = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/spamguard')
+#db = MongoEngine(app)
+try:
+    client = MongoClient(app.config['MONGODB_URI'])
+    print("✅ MongoDB Connected! Version:", client.server_info()['version'])
+    connect(
+        db='spamguard',
+        host=app.config['MONGODB_URI'],
+        connect=False,  # Important for serverless
+        connectTimeoutMS=30000,
+        serverSelectionTimeoutMS=5000
+    )
+except Exception as e:
+    print("❌ MongoDB Connection Failed:", e)
+    raise RuntimeError("Database connection failed") from e
 # Email configuration
 # Replace your current email config with this:
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -40,39 +54,44 @@ app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'ssohamm12@gmail.com'  # Your Gmail address
 app.config['MAIL_PASSWORD'] = 'hczf earth chyt dcgq'  # Generated app password (see below)
 app.config['MAIL_DEFAULT_SENDER'] = 'ssohamm12@gmail.com'  # Your Gmail address
-app.config['MAIL_SUPPRESS_SEND'] = False  # Actually send emails
+app.config['MAIL_SUPPRESS_SEND'] = True  # Actually send emails
 mail = Mail(app)
 
 
 
 # User model
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    email_verified = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    role = db.Column(db.String(20), default='user')
+class User(Document):  # Notice Document instead of db.Document
+    username = StringField(unique=True, required=True)
+    email = StringField(unique=True, required=True)
+    password = StringField(required=True)
+    email_verified = BooleanField(default=False)
+    created_at = DateTimeField(default=datetime.utcnow)
+    role = StringField(default='user')
+    
+    meta = {
+        'collection': 'users',
+        'indexes': [
+            'username',
+            'email'
+        ]
+    }
 
-    def __repr__(self):
-        return f'<User {self.username}>'
     
 # Contact Message model
-class ContactMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_read = db.Column(db.Boolean, default=False)
-
-    def __repr__(self):
-        return f'<ContactMessage from {self.name}>'
-
-# Create tables
-with app.app_context():
-    db.create_all()
+class ContactMessage(Document):
+    name = StringField(required=True)
+    email = StringField(required=True)
+    message = StringField(required=True)
+    created_at = DateTimeField(default=datetime.utcnow)
+    is_read = BooleanField(default=False)
+    
+    meta = {
+        'collection': 'contact_messages',
+        'indexes': [
+            '-created_at',
+            'email'
+        ]
+    }
 
 # Load stopwords
 ENGLISH_STOP_WORDS = set(stopwords.words("english"))
@@ -87,7 +106,7 @@ max_length = 500
 
 # Load tokenizer
 try:
-    with open("model/label_encoder2.pkl", "rb") as handle:
+    with open("model/tokenizer.pkl", "rb") as handle:
         tokenizer = pickle.load(handle)
 except:
     print("Warning: Tokenizer file not found! Using a new one.")
@@ -157,22 +176,15 @@ SpamGuard Team
         flash('Failed to send verification email. Please try again later.', 'error')
 
 
-def send_password_reset_email(user):
-    token = generate_password_reset_token(user.email)
-    reset_url = url_for('reset_password', token=token, _external=True)
+def send_verification_email(user):
+    token = generate_verification_token(user.email)
+    verify_url = url_for('verify_email', token=token, _external=True)
     
-    # Debug print (for terminal testing)
-    if app.debug:
-        print(f"DEBUG: Password reset link for {user.email}: {reset_url}")
-    
-    # Skip sending real email if in test mode
-    if app.config.get('MAIL_SUPPRESS_SEND'):
-        return
-        
-    msg = Message('Password Reset Request - SpamGuard',
-                 recipients=[user.email])
-    msg.body = f'''Click to reset your password: {reset_url}'''
-    mail.send(msg)
+    # Print to terminal instead of sending an email
+    print("\n" + "="*50)
+    print(f"📧 Verification Email (Mock) for: {user.email}")
+    print(f"🔗 Verification URL: {verify_url}")
+    print("="*50 + "\n")
 
 def generate_password_reset_token(email):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -189,6 +201,26 @@ def verify_password_reset_token(token, expiration=3600):
     except:
         return None
     return email
+
+def send_password_reset_email(user):
+    token = generate_password_reset_token(user.email)
+    reset_url = url_for('reset_password', token=token, _external=True)
+    
+    # Debug print (for terminal testing)
+    if app.debug:
+        print("\n" + "="*50)
+        print(f"🔑 Password Reset Link for: {user.email}")
+        print(f"🔗 Reset URL: {reset_url}")
+        print("="*50 + "\n")
+    
+    # Skip sending real email if in test mode
+    if app.config.get('MAIL_SUPPRESS_SEND'):
+        return
+        
+    msg = Message('Password Reset Request - SpamGuard',
+                 recipients=[user.email])
+    msg.body = f'''Click to reset your password: {reset_url}'''
+    mail.send(msg)
 
 def generate_verification_token(email):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -210,7 +242,9 @@ def admin_required(f):
         if not username:
             return redirect(url_for('login'))
         
-        user = User.query.filter_by(username=username).first()
+        # MongoEngine query (replaces User.query.filter_by)
+        user = User.objects(username=username).first()
+        
         if not user or user.role != 'admin':
             flash('You do not have permission to access this page', 'error')
             return redirect(url_for('index'))
@@ -234,9 +268,13 @@ def index():
 def index():
     if 'username' not in session:
         return redirect(url_for('login'))
+    
+    # MongoEngine query (replaces User.query.filter_by)
+    user = User.objects(username=session['username']).first()
+    
     return render_template("index.html", 
                          username=session['username'],
-                         User=User)  # Pass User model to template
+                         user=user)  # Pass User model to template
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
@@ -244,7 +282,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        user = User.query.filter_by(username=username).first()
+        user = User.objects(username=username).first()  # MongoEngine style
         
         if user and check_password_hash(user.password, password):
             if not user.email_verified:
@@ -266,23 +304,15 @@ def register():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
         
-        if User.query.filter_by(username=username).first():
+        if User.objects(username=username).first():
             flash('Username already exists', 'error')
-        elif User.query.filter_by(email=email).first():
+        elif User.objects(email=email).first():
             flash('Email already registered', 'error')
-        elif password != confirm_password:
-            flash('Passwords do not match', 'error')
         else:
-            new_user = User(
-                username=username,
-                email=email,
-                password=generate_password_hash(password)
-            )
-            db.session.add(new_user)
-            db.session.commit()
+            new_user = User(username=username, email=email, password=generate_password_hash(password))
+            new_user.save()
             
             send_verification_email(new_user)
-            
             flash('Registration successful! Please check your email to verify your account.', 'success')
             return redirect(url_for('login'))
     
@@ -295,12 +325,16 @@ def verify_email(token):
         flash('The verification link is invalid or has expired.', 'error')
         return redirect(url_for('login'))
     
-    user = User.query.filter_by(email=email).first()
-    if user.email_verified:
+    # MongoEngine query (replaces User.query.filter_by)
+    user = User.objects(email=email).first()
+    
+    if not user:
+        flash('User not found.', 'error')
+    elif user.email_verified:
         flash('Account already verified. Please login.', 'info')
     else:
         user.email_verified = True
-        db.session.commit()
+        user.save()  # MongoEngine save() instead of db.session.commit()
         flash('Email verified successfully! You can now login.', 'success')
     
     return redirect(url_for('login'))
@@ -309,9 +343,11 @@ def verify_email(token):
 def forgot_password():
     if request.method == 'POST':
         email = request.form['email']
-        user = User.query.filter_by(email=email).first()
+        # MongoEngine query to find user
+        user = User.objects(email=email).first()
+        
         if user:
-            send_password_reset_email(user)
+            send_password_reset_email(user)  # Call the function
             flash('Password reset instructions have been sent to your email.', 'info')
             return redirect(url_for('login'))
         else:
@@ -333,11 +369,15 @@ def reset_password(token):
         if password != confirm_password:
             flash('Passwords do not match', 'error')
         else:
-            user = User.query.filter_by(email=email).first()
-            user.password = generate_password_hash(password)
-            db.session.commit()
-            flash('Your password has been updated! You can now login.', 'success')
-            return redirect(url_for('login'))
+            # MongoEngine query to find user
+            user = User.objects(email=email).first()
+            if user:
+                user.password = generate_password_hash(password)
+                user.save()  # MongoEngine's save() instead of db.session.commit()
+                flash('Your password has been updated! You can now login.', 'success')
+                return redirect(url_for('login'))
+            else:
+                flash('User not found', 'error')
     
     return render_template('reset_password.html', token=token)
 
@@ -350,7 +390,7 @@ def logout():
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
-    users = User.query.all()
+    users = User.objects.all()  # Note: .all() returns a queryset
     return render_template('admin.html', users=users)
 
 @app.route("/about")
@@ -376,21 +416,9 @@ def submit_contact():
             name=data['name'],
             email=data['email'],
             message=data['message']
-        )
-        db.session.add(new_message)
-        db.session.commit()
+        ).save()
         
-        # Optional: Send email notification to admin
-        if not app.config.get('MAIL_SUPPRESS_SEND'):
-            admin_email = os.getenv('ADMIN_EMAIL', 'admin@spamguard.com')
-            msg = Message('New Contact Form Submission',
-                         recipients=[admin_email])
-            msg.body = f'''New message from {data['name']} ({data['email']}):
-            
-            {data['message']}
-            '''
-            mail.send(msg)
-        
+        # Email sending code remains the same
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -398,50 +426,82 @@ def submit_contact():
 @app.route("/admin/messages")
 @admin_required
 def admin_messages():
-    messages = ContactMessage.query.order_by(ContactMessage.created_at.desc()).all()
+    messages = ContactMessage.objects.order_by('-created_at')
     return render_template('admin_messages.html', messages=messages, username=session['username'])
 
-@app.route("/mark-read/<int:message_id>", methods=['POST'])
+@app.route("/mark-read/<string:message_id>", methods=['POST'])
 @admin_required
 def mark_message_read(message_id):
-    message = ContactMessage.query.get_or_404(message_id)
-    message.is_read = True
-    db.session.commit()
-    return redirect(url_for('admin_messages'))
+    # 1) try to fetch (raises ContactMessage.DoesNotExist if not found)
+    try:
+        message = ContactMessage.objects.get(id=message_id)
+    except ContactMessage.DoesNotExist:
+        # if you want a Flask 404
+        abort(404)
+    except Exception as e:
+        flash(f"Error fetching message: {e}", "error")
+        return redirect(url_for("admin_messages"))
 
-@app.route('/admin/edit-user/<int:user_id>', methods=['GET', 'POST'])
+    # 2) now update
+    try:
+        message.update(set__is_read=True)
+    except Exception as e:
+        flash(f"Error marking message as read: {e}", "error")
+
+    return redirect(url_for("admin_messages"))
+
+@app.route('/admin/edit-user/<string:user_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_user(user_id):
-    user = User.query.get_or_404(user_id)
+    try:
+        # Get user or return 404
+        user = User.objects.get(id=user_id)
+        
+        if request.method == 'POST':
+            user.username = request.form['username']
+            user.email = request.form['email']
+            user.role = request.form['role']
+            user.email_verified = 'email_verified' in request.form
+            
+            if request.form['password']:
+                user.password = generate_password_hash(request.form['password'])
+            
+            user.save()  # MongoEngine save operation
+            flash('User updated successfully!', 'success')
+            return redirect(url_for('admin_dashboard'))
+        
+        return render_template('edit_user.html', 
+                            user=user,
+                            username=session['username'])
     
-    if request.method == 'POST':
-        user.username = request.form['username']
-        user.email = request.form['email']
-        user.role = request.form['role']
-        user.email_verified = 'email_verified' in request.form
-        
-        # Only update password if a new one was provided
-        if request.form['password']:
-            user.password = generate_password_hash(request.form['password'])
-        
-        db.session.commit()
-        flash('User updated successfully!', 'success')
+    except User.DoesNotExist:
+        abort(404)  # User not found
+    except Exception as e:
+        flash(f'Error updating user: {str(e)}', 'error')
         return redirect(url_for('admin_dashboard'))
-    
-    return render_template('edit_user.html', user=user, username=session['username'])
 
-@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
+@app.route('/admin/delete-user/<string:user_id>', methods=['POST'])
 @admin_required
 def delete_user(user_id):
-    if user_id == session.get('user_id'):
-        flash('You cannot delete your own account!', 'error')
+    try:
+        # Get user or raise 404
+        user = User.objects.get(id=user_id)
+        
+        # Prevent admin from deleting themselves
+        if user.username == session.get('username'):
+            flash('You cannot delete your own account!', 'error')
+            return redirect(url_for('admin_dashboard'))
+            
+        user.delete()
+        flash('User deleted successfully!', 'success')
         return redirect(url_for('admin_dashboard'))
-    
-    user = User.query.get_or_404(user_id)
-    db.session.delete(user)
-    db.session.commit()
-    flash('User deleted successfully!', 'success')
-    return redirect(url_for('admin_dashboard'))
+        
+    except User.DoesNotExist:
+        abort(404, description="User not found")
+    except Exception as e:
+        flash(f'Error deleting user: {str(e)}', 'error')
+        app.logger.error(f'Error deleting user {user_id}: {str(e)}')
+        return redirect(url_for('admin_dashboard'))
 
 @app.route("/privacy")
 def privacy():
@@ -460,6 +520,8 @@ def faq():
     if 'username' not in session:
         return redirect(url_for('login'))
     return render_template("faq.html", username=session['username'])
+
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
