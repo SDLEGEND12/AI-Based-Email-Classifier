@@ -41,7 +41,7 @@ mongodb_db = 'spamguard'
 app.config['MONGODB_URI'] = (
     f"mongodb+srv://{mongodb_user}:{mongodb_pass}@{mongodb_cluster}/"
     f"{mongodb_db}?retryWrites=true&w=majority"
-    f"&tls=true&tlsCAFile={quote_plus(certifi.where())}"
+    f"&tls=true&tlsCAFile={certifi.where()}"
 )
 
 try:
