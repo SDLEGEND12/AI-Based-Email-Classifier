@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, url_for, redirect, session, flash, abort
 import numpy as np
 import tensorflow as tf
+from urllib.parse import quote_plus
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import pickle
@@ -31,15 +32,23 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
 # MongoDB configuration
-app.config['MONGODB_URI'] = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/spamguard')
-#db = MongoEngine(app)
+mongodb_user = quote_plus(os.getenv('MONGODB_USER', ''))
+mongodb_pass = quote_plus(os.getenv('MONGODB_PASSWORD', ''))
+mongodb_cluster = os.getenv('MONGODB_CLUSTER', '')
+mongodb_db = 'spamguard'
+
+app.config['MONGODB_URI'] = (
+    f"mongodb+srv://{mongodb_user}:{mongodb_pass}@{mongodb_cluster}/"
+    f"{mongodb_db}?retryWrites=true&w=majority&appName=SpamGuard"
+)
+
 try:
     client = MongoClient(app.config['MONGODB_URI'])
     print("✅ MongoDB Connected! Version:", client.server_info()['version'])
     connect(
-        db='spamguard',
+        db=mongodb_db,
         host=app.config['MONGODB_URI'],
-        connect=False,  # Important for serverless
+        connect=False,
         connectTimeoutMS=30000,
         serverSelectionTimeoutMS=5000
     )
@@ -544,4 +553,7 @@ handler = app
 
 if __name__ == "__main__":
     app.run(debug=True)
-
+#if __name__ == "__main__":
+    #import os
+    #port = int(os.environ.get("PORT", 5000))
+    #app.run(host="0.0.0.0", port=port)
