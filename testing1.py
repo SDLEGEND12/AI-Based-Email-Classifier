@@ -20,6 +20,7 @@ from datetime import datetime
 #from flask_mongoengine import MongoEngine
 from mongoengine import connect, Document, StringField, BooleanField, DateTimeField
 from pymongo import MongoClient
+import certifi
 
 load_dotenv()
 
@@ -39,16 +40,24 @@ mongodb_db = 'spamguard'
 
 app.config['MONGODB_URI'] = (
     f"mongodb+srv://{mongodb_user}:{mongodb_pass}@{mongodb_cluster}/"
-    f"{mongodb_db}?retryWrites=true&w=majority&appName=SpamGuard"
+    f"{mongodb_db}?retryWrites=true&w=majority"
+    f"&tls=true&tlsCAFile={quote_plus(certifi.where())}"
 )
 
 try:
-    client = MongoClient(app.config['MONGODB_URI'])
+    client = MongoClient(
+        app.config['MONGODB_URI'],
+        tls=True,
+        tlsCAFile=certifi.where(),
+        connectTimeoutMS=30000,
+        serverSelectionTimeoutMS=5000
+    )
     print("✅ MongoDB Connected! Version:", client.server_info()['version'])
     connect(
         db=mongodb_db,
         host=app.config['MONGODB_URI'],
-        connect=False,
+        tls=True,
+        tlsCAFile=certifi.where(),
         connectTimeoutMS=30000,
         serverSelectionTimeoutMS=5000
     )
