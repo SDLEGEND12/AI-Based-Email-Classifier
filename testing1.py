@@ -24,20 +24,21 @@ import certifi
 
 load_dotenv()
 
-# Set the NLTK data path to the local directory
+# 1. Define the NLTK data directory path
 nltk_data_dir = os.path.join(os.path.dirname(__file__), 'nltk_data')
-nltk.data.path.append(nltk_data_dir)
 
-# Download NLTK resources if not already present
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', download_dir=nltk_data_dir)
+# 2. Set environment variable AND add to nltk's path
+os.environ['NLTK_DATA'] = nltk_data_dir  # Force system-wide recognition
+nltk.data.path.append(nltk_data_dir)     # Add to nltk's search path
 
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords', download_dir=nltk_data_dir)
+# 3. Download required resources with fallback
+required_resources = ['punkt', 'stopwords', 'popular']
+
+for resource in required_resources:
+    try:
+        nltk.data.find(resource)
+    except LookupError:
+        nltk.download(resource, download_dir=nltk_data_dir)
 
 # Initialize Flask app
 app = Flask(__name__)
