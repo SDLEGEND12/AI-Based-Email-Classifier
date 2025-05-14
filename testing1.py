@@ -22,28 +22,54 @@ from mongoengine import connect, Document, StringField, BooleanField, DateTimeFi
 from pymongo import MongoClient
 import certifi
 from pathlib import Path
+import sys
 
 load_dotenv()
 
-# Configure paths
-nltk_data_dir = Path(__file__).parent / "nltk_data"
-os.environ["NLTK_DATA"] = str(nltk_data_dir)
+# 1. Configure Paths ----------------------------------------------------------
+BASE_DIR = Path(__file__).parent.resolve()
+NLTK_DIR = BASE_DIR / "nltk_data"
+os.environ["NLTK_DATA"] = str(NLTK_DIR)
 
-# Ensure base directories exist
-(nltk_data_dir / "tokenizers").mkdir(parents=True, exist_ok=True)
+# 2. Directory Structure Enforcement -------------------------------------------
+# Create essential directories if missing
+(NLTK_DIR / "tokenizers/punkt_tab").mkdir(parents=True, exist_ok=True)
+(NLTK_DIR / "corpora").mkdir(parents=True, exist_ok=True)
 
-# Force download punkt if punkt_tab missing
-PUNKT_TAB_PATH = nltk_data_dir / "tokenizers" / "punkt_tab"
-if not PUNKT_TAB_PATH.exists():
-    print("🔄 Forcing punkt download...")
-    nltk.download("punkt", download_dir=str(nltk_data_dir), force=True)
+# 3. Required Files Check -----------------------------------------------------
+REQUIRED_FILES = {
+    NLTK_DIR / "tokenizers/punkt/PY3/english.pickle",
+    NLTK_DIR / "tokenizers/punkt/english.pickle",
+    NLTK_DIR / "corpora/stopwords",
+    # Handle punkt_tab file existence
+    NLTK_DIR / "tokenizers/punkt_tab/english.pickle"
+}
 
-# Verify core resources
-for resource in ["punkt", "stopwords"]:
-    try:
-        nltk.data.find(resource)
-    except LookupError:
-        nltk.download(resource, download_dir=str(nltk_data_dir))
+# Check for critical files with auto-fallback
+for file in REQUIRED_FILES:
+    if not file.exists():
+        # Attempt to copy from punkt if available
+        if "punkt_tab" in str(file):
+            src = NLTK_DIR / "tokenizers/punkt/english.pickle"
+            if src.exists():
+                file.parent.mkdir(exist_ok=True, parents=True)
+                file.write_bytes(src.read_bytes())
+                continue
+                
+        missing_files = [str(f) for f in REQUIRED_FILES if not f.exists()]
+        if missing_files:
+            error_msg = f"Missing NLTK files:\n" + "\n".join(missing_files)
+            sys.exit(f"❌ Error: {error_msg}\n"
+                     "Run:\n"
+                     "python -m nltk.downloader punkt punkt_tab stopwords -d nltk_data")
+
+# 4. NLTK Configuration -------------------------------------------------------
+nltk.data.path = [str(NLTK_DIR)] + nltk.data.path
+
+# 5. Production Lock ----------------------------------------------------------
+if os.getenv("ENV") == "production":
+    nltk.download = lambda *args, **kwargs: None
+    nltk.data.find = lambda res: None  # Force use of local files
 
 # Initialize Flask app
 app = Flask(__name__)
