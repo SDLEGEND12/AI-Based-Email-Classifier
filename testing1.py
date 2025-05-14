@@ -21,24 +21,29 @@ from datetime import datetime
 from mongoengine import connect, Document, StringField, BooleanField, DateTimeField
 from pymongo import MongoClient
 import certifi
+from pathlib import Path
 
 load_dotenv()
 
-# 1. Define the NLTK data directory path
-nltk_data_dir = os.path.join(os.path.dirname(__file__), 'nltk_data')
+# Configure paths
+nltk_data_dir = Path(__file__).parent / "nltk_data"
+os.environ["NLTK_DATA"] = str(nltk_data_dir)
 
-# 2. Set environment variable AND add to nltk's path
-os.environ['NLTK_DATA'] = nltk_data_dir  # Force system-wide recognition
-nltk.data.path.append(nltk_data_dir)     # Add to nltk's search path
+# Ensure base directories exist
+(nltk_data_dir / "tokenizers").mkdir(parents=True, exist_ok=True)
 
-# 3. Download required resources with fallback
-required_resources = ['punkt', 'stopwords', 'popular']
+# Force download punkt if punkt_tab missing
+PUNKT_TAB_PATH = nltk_data_dir / "tokenizers" / "punkt_tab"
+if not PUNKT_TAB_PATH.exists():
+    print("🔄 Forcing punkt download...")
+    nltk.download("punkt", download_dir=str(nltk_data_dir), force=True)
 
-for resource in required_resources:
+# Verify core resources
+for resource in ["punkt", "stopwords"]:
     try:
         nltk.data.find(resource)
     except LookupError:
-        nltk.download(resource, download_dir=nltk_data_dir)
+        nltk.download(resource, download_dir=str(nltk_data_dir))
 
 # Initialize Flask app
 app = Flask(__name__)
